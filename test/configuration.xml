@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <directory>
+    <root>"/home/bob/documents/website/bob/"</root>
+  </directory>
+  <misc>
+    <username-length>4</username-length>
+    <try-again-time>3</try-again-time>
+  </misc>
+  <database>
+    <name>"bobs site"</name>
+    <user>"bob"</user>
+    <address>"localhost"</address>
+    <password>""</password>
+  </database>
+  <html>
+    <title>"im a title"</title>
+    <standard-image>"/images/bobbing.gif"</standard-image>
+  </html>
+  <data>
+    <filename>"data"</filename>
+  </data>
+  <passwords>
+    <login>"bigyeetus3"</login>
+    <totals>"yeetusmcbeetus2"</totals>
+  </passwords>
+</configuration> 
