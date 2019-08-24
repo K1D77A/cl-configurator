@@ -1,3 +1,3 @@
 (defpackage #:cl-configurator
-  (:use #:CL #:CXML))
+  (:use #:CL))
 (in-package #:cl-configurator)

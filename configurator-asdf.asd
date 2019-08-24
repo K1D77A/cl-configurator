@@ -6,8 +6,8 @@
   :author "k1d77a"
   :version "0"
   :license "MIT"
-  :depends-on (#:cxml)
   :pathname "src"
+  :depends-on (:com.informatimago.common-lisp.cesarum)
   :serial t
   :components ((:file "package")
 	       (:file "main")))
