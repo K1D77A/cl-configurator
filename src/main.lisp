@@ -2,29 +2,76 @@
 
 (defparameter *configuration-function-names* ())
 (defun read-configuration-file (path)
-  (com.informatimago.common-lisp.cesarum.file:sexp-file-contents path))
+  (with-open-file (file path)
+    (read file)))
+
+
+;;^ is
+;; (:CONFIGURATION (:DIRECTORY (:ROOT "/home/bob/documents/website/bob/"))
+;;  (:MISC (:USERNAME-LENGTH 4) (:TRY-AGAIN-TIME 3))
+;;  (:DATABASE (:NAME "bobs site") (:USER "bob") (:ADDRESS "localhost")
+;;   (:PASSWORD ""))
+;;  (:HTML (:TITLE "im a title") (:STANDARD-IMAGE "/images/bobbing.gif"))
+;;  (:DATA (:FILENAME "data"))
+;;  (:PASSWORDS (:LOGIN "bigyeetus3") (:TOTALS "yeetusmcbeetus2")))
 
 (defun combine-group-and-name (group name)
   (format nil "~A-~A" group name))
-(defun create-name (group name)
-  (intern (combine-group-and-name group name)))
-(defmacro create-storage-function (name value)
-  `(defun ,name ()
-     ,value))
-(defun make-storage-function (group name value)
-  (let ((created-name (create-name group name)))
-    (create-storage-function created-name value)))
+
+(defparameter *val-hash* (make-hash-table))
 
 (defun config-to-functions (config)
-  (let ((lst (rest config)));;remove :directory
+  (let ((lst (rest config)));;remove :configuration
     (mapcar (lambda (list)
 	      (let ((group (first list)))
 		(mapcar (lambda (entry)
-			  (print group)
-			  (if (= (length entry) 2)
-			      (create-storage-function group (first entry)
-							     (second entry))
-			      (create-storage-function  group (first entry)
-						       (rest entry))))
+			  (let ((name (intern (combine-group-and-name group (first entry))
+					      "KEYWORD")))
+			    (make-function name (first (rest entry)))))
+			    
 			(rest list))))
 	    lst)))
+
+(define-condition unexpected-type (error)
+  ((type
+    :initarg :type
+    :accessor unexpected-type-type
+    :initform nil
+    :documentation "The value of (type-of val) that caused the error")
+   (value
+    :initarg :value
+    :accessor unexpected-type-value
+    :initform nil
+    :documentation "The value of val")))
+
+(defmethod print-object ((object unexpected-type) stream)
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "Value: ~A~%Type of value: ~S"
+	    (unexpected-type-value object)
+	    (unexpected-type-type object))))
+(defun unexpected-type-error (value)
+  (error 'unexpected-type
+	 :type (type-of value)
+	 :value value))
+
+(defgeneric make-function (name value)
+  (:documentation "Takes in a name and a value and creates a variable by that name with that data"))
+
+(defmethod make-function :before (name value)
+  (format *standard-output* "Name: ~S~%Value: ~S~%"
+	  name value))
+(defmethod make-function (name value)
+  (declare (ignore name))
+  (unexpected-type-error value))
+(defmethod make-function (name (value string))
+  (setf (gethash name *val-hash*) value))
+(defmethod make-function (name (value integer))
+  (setf (gethash name *val-hash*) value))
+(defmethod make-function (name (value float))
+  (setf (gethash name *val-hash*) value))
+
+(defgeneric access (key &optional newvalue))
+(defmethod access (key &optional newvalue)
+  (gethash key *val-hash*))
+(defmethod (setf access) (key newvalue)
+  (setf (gethash key *val-hash*) nil))
