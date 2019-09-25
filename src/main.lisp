@@ -21,7 +21,7 @@
 (defparameter *val-hash* (make-hash-table))
 (defparameter *allow-all* nil)
 
-(defun config-to-functions (config)
+(defun config-to-hash (config)
   (let ((lst (rest config)));;remove :configuration
     (mapcar (lambda (list)
 	      (let ((group (first list)))
