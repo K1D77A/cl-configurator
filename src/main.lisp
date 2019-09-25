@@ -19,6 +19,7 @@
   (format nil "~A-~A" group name))
 
 (defparameter *val-hash* (make-hash-table))
+(defparameter *allow-all* nil)
 
 (defun config-to-functions (config)
   (let ((lst (rest config)));;remove :configuration
@@ -61,8 +62,10 @@
   (format *standard-output* "Name: ~S~%Value: ~S~%"
 	  name value))
 (defmethod make-function (name value)
-  (declare (ignore name))
-  (unexpected-type-error value))
+  (if *allow-all*
+      (setf (gethash name *val-hash*) value)
+      (unexpected-type-error value)))
+
 (defmethod make-function (name (value string))
   (setf (gethash name *val-hash*) value))
 (defmethod make-function (name (value integer))
@@ -70,8 +73,17 @@
 (defmethod make-function (name (value float))
   (setf (gethash name *val-hash*) value))
 
-(defgeneric access (key &optional newvalue))
-(defmethod access (key &optional newvalue)
+
+
+
+(defgeneric access (key)
+  (:documentation "gets the value of key"))
+(defmethod access (key)
   (gethash key *val-hash*))
 (defmethod (setf access) (key newvalue)
   (setf (gethash key *val-hash*) nil))
+
+(defgeneric set-access (key value)
+  (:documentation "Sets the value of key to value"))
+(defmethod set-access (key value)
+  (setf (gethash key *val-hash*) value))
