@@ -12,7 +12,10 @@ It's pretty simple to use just run the following:
 
 This will print a list of names and values, you can then use (access name) to retrieve the value
 and (set-access name value) to edit the value.
-However changing the value does not permanently change it, so the config file is not rewritten.
+However changing the value doesn't change the value in the config file.
 
 
 Currently only supports floats strings and integers as valid types unless `*allow-all*` is set to true
+
+
+here is an example:

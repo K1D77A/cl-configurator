@@ -1,5 +1,4 @@
 ;;;;this is the basic configuration file
-
 (:configuration
  (:directory
   (:root "/home/bob/documents/website/bob/"))
@@ -13,7 +12,11 @@
   (:password ""))
  (:html
   (:title "im a title")
-  (:standard-image "/images/bobbing.gif"))
+  (:standard-image "/images/bobbing.gif")
+  (:special
+    (:numbers
+     (:nine 9)
+     (:eight 8))))
  (:data
   (:filename "data"))
  (:passwords

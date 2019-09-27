@@ -1,3 +1,3 @@
 (defun load-up ()
-  (asdf:load-asd "/home/josh/documents/lisp/programs/cl-configurator/configurator-asdf.asd")
+  (asdf:load-asd "/home/josh/quicklisp/local-projects/cl-configurator/configurator-asdf.asd")
   (ql:quickload "cl-configurator"))
