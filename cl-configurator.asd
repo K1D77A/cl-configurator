@@ -10,5 +10,6 @@
   :serial t
   :components ((:file "package")
 	       (:file "classes")
+	       (:file "conditions")
 	       (:file "main")))
      
