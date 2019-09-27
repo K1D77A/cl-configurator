@@ -8,11 +8,13 @@
 (defclass parents ()
   ((parents
     :accessor node-parents
+    :type list
     :initarg :parents
     :initform nil)))
 (defclass children ()
   ((children
     :accessor node-children
+    :type list
     :initarg :children
     :initform nil)))
 (defclass value()

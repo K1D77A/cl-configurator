@@ -1,10 +1,15 @@
 (in-package #:cl-configurator)
-(defparameter *configuration-function-names* ())
 (defun read-configuration-file (path)
   (with-open-file (file path)
     (read file)))
 
 
+(defparameter *default-depth* 2)
+(defparameter *default-ignore* '(0));;ignore :configuration
+(defparameter *default-all-parents* nil)
+(defparameter *default-from-start* nil)
+(defparameter *val-hash* (make-hash-table))
+(defparameter *allow-all* nil)
 
 (defun contains-children-p (list)
   "Checks if the list contains children"
@@ -86,8 +91,9 @@ root, then a list of all the branches with their children as lists not objects a
 								 (all-parents nil))
   "Combines the name of the parents with the parent names upto depth-of-combination, eg 
 the node-name 'charles' with the node-parents being (sex height race name) and depth 2 would
-would become ':race-name-charles', but 4 would be ':sex-height-race-name-charles', deptch is measured from right to left, so most recent parent first. If all-parents is set to t, then all the parents
-with the exception of the positions listed in ignore-positions will be used"
+would become ':race-name-charles', but 4 would be ':sex-height-race-name-charles',
+ depth is measured from right to left, so most recent parent first. If all-parents is set to t, 
+then all the parents with the exception of the positions listed in ignore-positions will be used"
   (when (listp ignore-positions)
     (let ((items-to-remove (collect-positions-in-list parents ignore-positions)))
       (setf parents (remove-list-items-from-list items-to-remove parents))))
@@ -105,8 +111,7 @@ with the exception of the positions listed in ignore-positions will be used"
 
  
 
-(defparameter *val-hash* (make-hash-table))
-(defparameter *allow-all* nil)
+
 
 (define-condition unexpected-type (error)
   ((type
@@ -191,17 +196,18 @@ the keywords used to access their values with (access <keyword>)"
 						     :all-parents all-parents))
 	  list-of-leaves))
 
-(defparameter *default-depth* 2)
-(defparameter *default-ignore* '(0));;ignore :configuration
-(defparameter *default-all-parents* nil)
-(defparameter *default-from-start* nil)
 (defun import-configuration (path &key (from-start *default-from-start*)
 				    (depth-of-combination *default-depth*)
 				    (ignore-positions *default-ignore*)
 				    (all-parents *default-all-parents*))
+  "Imports the configuration, converts it to objects and then puts the leaves into a hashtable,
+generating the keyword accessors based primarily on the value of depth-of-combination and 
+ignore-positions which is a list, but if you change all-parents to t it'll add all parents
+except those listed in ignore-positions"
   (multiple-value-bind (tree branches leaves)
       (config-to-objects (read-configuration-file path))
-    (declare (ignore tree branches))
+    (declare (ignore branches));;currently ignores tree and branches
     (leaves-to-hashes leaves  depth-of-combination :from-start from-start
 						   :ignore-positions ignore-positions
-						   :all-parents all-parents)))
+						   :all-parents all-parents)
+    tree))
