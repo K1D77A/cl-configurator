@@ -9,5 +9,6 @@
   :pathname "src"
   :serial t
   :components ((:file "package")
+	       (:file "classes")
 	       (:file "main")))
      

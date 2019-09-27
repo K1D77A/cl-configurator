@@ -5,63 +5,6 @@
     (read file)))
 
 
-(defclass name ()
-  ((name
-    :accessor node-name
-    :initarg :name
-    :initform nil)))
-(defclass parents ()
-  ((parents
-    :accessor node-parents
-    :initarg :parents
-    :initform nil)))
-(defclass children ()
-  ((children
-    :accessor node-children
-    :initarg :children
-    :initform nil)))
-(defclass value()
-  ((value
-    :accessor node-value
-    :initarg :value
-    :initform nil)))
-
-(defclass root (name children)
-  ())
-(defclass branch (name parents children)
-  ())
-(defclass leaf (name parents value)
-  ())
-
-(defun make-root (name children)
-  (make-instance 'root :name name :children children)) 
-
-(defmethod print-object ((object root) stream)
-  (print-unreadable-object (object stream :type t :identity t)
-    (format stream "Name: ~S Children: ~S"
-	    (node-name object)
-	    (length (node-children object)))))
-
-
-(defun make-branch (name parents children)
-  (make-instance 'branch :name name :children children :parents parents))
-
-(defmethod print-object ((object branch) stream)
-  (print-unreadable-object (object stream :type t :identity t)
-    (format stream "Name: ~S Parents: ~S Children: ~S"
-	    (node-name object)
-	    (node-parents object)
-	    (length (node-children object)))))
-
-(defun make-leaf (name parents value)
-  (make-instance 'leaf :name name :value value :parents parents))
-
-(defmethod print-object ((object leaf) stream)
-  (print-unreadable-object (object stream :type t :identity t)
-    (format stream "Name: ~S Parents: ~S Value: ~S"
-	    (node-name object)
-	    (node-parents object)
-	    (node-value object))))
 
 (defun contains-children-p (list)
   "Checks if the list contains children"
@@ -79,13 +22,13 @@
     (reverse children)))
 (defun branch-p (list)
   "Checks if a list is a branch, meaning it has children"
-  (if (and (any-node-name list)
+  (if (and (n-name list)
 	   (collect-children list));;this is slow
       t
       nil))
 (defun leaf-p (list)
   "Checks if list is a leaf, meaning it has no children"
-  (and (any-node-name list)
+  (and (n-name list)
        (not (contains-children-p list))))
 (defun n-name (list)
   (first list))
@@ -122,36 +65,48 @@ root, then a list of all the branches with their children as lists not objects a
 	      branches
 	      leaves))))
 
-(defun combine-parents (node depth-of-combination)
-  "Combines the name of the node with the parent names upto depth-of-combination, eg 
+
+(defun remove-list-items-from-list (items list)
+  "removes the contents of items from list"
+  (let ((new-list list))
+    (dotimes (l (length items) new-list)
+      (setf new-list (remove (nth l items) new-list :test #'equal)))))
+(defun collect-positions-in-list (list list-of-positions)
+  "Collects the values from list that are at the positions listed in list-of-positions. starts from 0. Will ignore values that are higher than (length list)"
+  (let ((positions))
+    (dolist (item list-of-positions positions)
+      (if (numberp item)
+	  (when (< item (length list))
+	    (push (elt list item) positions))
+	  (error "item is not a number")))
+    (reverse positions)))
+
+(defun combine-list-into-keyword (parents depth-of-combination &key (from-start nil)
+								 (ignore-positions '())
+								 (all-parents nil))
+  "Combines the name of the parents with the parent names upto depth-of-combination, eg 
 the node-name 'charles' with the node-parents being (sex height race name) and depth 2 would
-would become ':race-name-charles', but 4 would be ':sex-height-race-name-charles', deptch is measured from right to left, so most recent parent first"
-  ())
-  
-  
+would become ':race-name-charles', but 4 would be ':sex-height-race-name-charles', deptch is measured from right to left, so most recent parent first. If all-parents is set to t, then all the parents
+with the exception of the positions listed in ignore-positions will be used"
+  (when (listp ignore-positions)
+    (let ((items-to-remove (collect-positions-in-list parents ignore-positions)))
+      (setf parents (remove-list-items-from-list items-to-remove parents))))
+  (when all-parents
+    (setf depth-of-combination (length parents)))
+  (when (< depth-of-combination 1)
+    (setf depth-of-combination 1))
+  (when (< (length parents) depth-of-combination)
+    (setf depth-of-combination (length parents)))
+  (if from-start
+      (intern (format nil "~{~a~^-~}" (subseq parents 0 depth-of-combination))
+	      "KEYWORD")
+      (intern (format nil "~{~a~^-~}" (reverse (subseq (reverse parents) 0 depth-of-combination)))
+	      "KEYWORD")))
 
-
-(defun combine-group-and-name (group name)
-  (format nil "~A-~A" group name))
+ 
 
 (defparameter *val-hash* (make-hash-table))
 (defparameter *allow-all* nil)
-(defun entry-name (entry)
-  (first entry))
-(defun entry-value (entry)
-  (first (rest entry)))
-
-(defun config-to-hash (config)
-  (let ((lst (rest config)));;remove :configuration
-    (mapcar (lambda (list)
-	      (let ((group (first list)))
-		(mapcar (lambda (entry)
-			  (let ((name (intern
-				       (combine-group-and-name group (entry-name entry))
-				       "KEYWORD")))
-			    (make-function name (entry-value entry))))
-			(rest list))))
-	    lst)))
 
 (define-condition unexpected-type (error)
   ((type
@@ -175,23 +130,45 @@ would become ':race-name-charles', but 4 would be ':sex-height-race-name-charles
 	 :type (type-of value)
 	 :value value))
 
-(defgeneric make-function (name value)
-  (:documentation "Takes in a name and a value and creates a variable by that name with that data"))
 
-(defmethod make-function :before (name value)
+
+
+(defgeneric make-entry (name value)
+  (:documentation "Takes in a name and a value and creates a variable by that name with that data"))
+ 
+(defmethod make-entry :before (name value)
   (format *standard-output* "Name: ~S~%Value: ~S~%"
 	  name value))
-(defmethod make-function (name value)
+
+(defmethod make-entry (name value)
   (if *allow-all*
       (setf (gethash name *val-hash*) value)
       (unexpected-type-error value)))
 
-(defmethod make-function (name (value string))
+(defmethod make-entry (name (value character))
   (setf (gethash name *val-hash*) value))
-(defmethod make-function (name (value integer))
+(defmethod make-entry (name (value number))
   (setf (gethash name *val-hash*) value))
-(defmethod make-function (name (value float))
+(defmethod make-entry (name (value sequence))
   (setf (gethash name *val-hash*) value))
+(defmethod make-entry (name (value pathname))
+  (setf (gethash name *val-hash*) value))
+
+(defun leaf-to-entry (leaf depth-of-combination  &key (from-start nil)
+						   (ignore-positions '())
+						   (all-parents nil))
+  (with-accessors ((name node-name)
+		   (parents node-parents)
+		   (value node-value))
+      leaf
+    (let* ((parent-and-name (append parents (list name)))
+	   (new-name (combine-list-into-keyword parent-and-name depth-of-combination
+						:from-start from-start
+						:ignore-positions ignore-positions
+						:all-parents all-parents)))
+      (make-entry new-name value))))
+
+
 
 (defgeneric access (key)
   (:documentation "gets the value of key"))
@@ -202,3 +179,29 @@ would become ':race-name-charles', but 4 would be ':sex-height-race-name-charles
   (:documentation "Sets the value of key to value"))
 (defmethod set-access (key value)
   (setf (gethash key *val-hash*) value))
+
+(defun leaves-to-hashes (list-of-leaves depth-of-combination &key (from-start nil)
+							       (ignore-positions '())
+							       (all-parents nil))
+  "Takes in a list of leaves which is normally generated by config-to-objects, and then generates 
+the keywords used to access their values with (access <keyword>)"
+  (mapcar (lambda (leaf)
+	    (leaf-to-entry leaf depth-of-combination :from-start from-start
+						     :ignore-positions ignore-positions
+						     :all-parents all-parents))
+	  list-of-leaves))
+
+(defparameter *default-depth* 2)
+(defparameter *default-ignore* '(0));;ignore :configuration
+(defparameter *default-all-parents* nil)
+(defparameter *default-from-start* nil)
+(defun import-configuration (path &key (from-start *default-from-start*)
+				    (depth-of-combination *default-depth*)
+				    (ignore-positions *default-ignore*)
+				    (all-parents *default-all-parents*))
+  (multiple-value-bind (tree branches leaves)
+      (config-to-objects (read-configuration-file path))
+    (declare (ignore tree branches))
+    (leaves-to-hashes leaves  depth-of-combination :from-start from-start
+						   :ignore-positions ignore-positions
+						   :all-parents all-parents)))
