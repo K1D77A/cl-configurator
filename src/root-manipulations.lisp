@@ -115,7 +115,6 @@ when root-node is made of objects not lists, as lists do not keep track of their
 		    (append (list (n-name node))
 			    (rec (n-children node))))
 		   ((leaf-p node)
-		    (print node)
 		    (cons (n-name node)
 			  (cons (n-value node) nil))))))
     (append (list (n-name root-node))
