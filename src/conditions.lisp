@@ -37,3 +37,26 @@
 (defun malformed-entry-error (value)
   (error 'malformed-entry
 	 :entry value))
+
+(define-condition not-keyword (unexpected-type)
+  ((type
+    :initarg :type
+    :accessor not-keyword-type
+    :initform nil
+    :documentation "The value of (type-of val) that caused the error")
+   (value
+    :initarg :value
+    :accessor not-keyword-value
+    :initform nil
+    :documentation "The value of val")))
+
+(defmethod print-object ((object not-keyword) stream)
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "Value: ~A~%Type of value: ~S Value should be of type KEYWORD"
+	    (not-keyword-value object)
+	    (not-keyword-type object))))
+(defun not-keyword-error (value)
+  (error 'not-keyword
+	 :type (type-of value)
+	 :value value))
+

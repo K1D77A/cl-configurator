@@ -11,5 +11,6 @@
   :components ((:file "package")
 	       (:file "classes")
 	       (:file "conditions")
+	       (:file "root-manipulations")
 	       (:file "main")))
      
