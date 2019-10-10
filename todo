@@ -1,0 +1,7 @@
+* save tree edits to the hash table if required
+** check if a new branch on a tree requires entry to the hash table
+* when value is changed in hash table change in tree
+* convert tree objects back to sexp
+** save sexp to config file 
+*** either on a timer or every modification
+* write docs
