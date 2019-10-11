@@ -16,10 +16,10 @@ See Todo for a list of things I am working on currently.
  
 It's pretty simple to use just run the following:
 ```
-(import-configuration (path &key (from-start *default-from-start*)
+(import-configuration path &key (from-start *default-from-start*)
 				    (depth-of-combination *default-depth*)
 				    (ignore-positions *default-ignore*)
-				    (all-parents *default-all-parents*)))
+				    (all-parents *default-all-parents*))
 ```
 This function is does the following:
 ```
