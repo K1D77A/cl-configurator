@@ -73,7 +73,7 @@ Value: "/home/bob/documents/website/bob/"
 #<ROOT Name: :CONFIGURATION Children: 6 {100354FC23}>
 ```
 You have the symbols used to access the variables in their hash-table and a tree
-which represents the tree.
+which represents the configuration file as objects
 ```
 |cl-con|> (access :passwords-totals)
 "yeetusmcbeetus2"
