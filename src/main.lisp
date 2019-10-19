@@ -72,21 +72,46 @@ the node-name 'charles' with the node-parents being (sex height race name) and d
 would become ':race-name-charles', but 4 would be ':sex-height-race-name-charles',
  depth is measured from right to left, so most recent parent first. If all-parents is set to t, 
 then all the parents with the exception of the positions listed in ignore-positions will be used"
-  (when (listp ignore-positions)
-    (let ((items-to-remove (collect-positions-in-list parents ignore-positions)))
-      (setf parents (remove-list-items-from-list items-to-remove parents))))
-  (when all-parents
-    (setf depth-of-combination (length parents)))
-  (when (< depth-of-combination 1)
-    (setf depth-of-combination 1))
-  (when (< (length parents) depth-of-combination)
-    (setf depth-of-combination (length parents)))
-  (if from-start
-      (intern (format nil "~{~a~^-~}" (subseq parents 0 depth-of-combination))
-	      "KEYWORD")
-      (intern (format nil "~{~a~^-~}" (reverse (subseq (reverse parents) 0 depth-of-combination)))
-	      "KEYWORD")))
 
+  (let* ((nparents (if (listp ignore-positions)
+		       (let ((items-to-remove (collect-positions-in-list parents ignore-positions)))
+			 (remove-list-items-from-list items-to-remove parents))
+		       parents))
+	(len-par (length nparents))
+	(d-o-p (cond (all-parents
+		      len-par)
+		     ((< depth-of-combination 1)
+		      1)
+		     ((< len-par depth-of-combination)
+		      len-par)
+		     (t depth-of-combination))))
+    (intern (format nil "~{~a~^-~}" (if from-start
+					(subseq nparents 0 d-o-p)
+					(reverse (subseq (reverse nparents) 0 d-o-p))))
+	    "KEYWORD")))
+
+;; (defun combine-list-into-keyword (parents depth-of-combination &key (from-start nil)
+;; 								 (ignore-positions '())
+;; 								 (all-parents nil))
+;;   "Combines the name of the parents with the parent names upto depth-of-combination, eg 
+;; the node-name 'charles' with the node-parents being (sex height race name) and depth 2 would
+;; would become ':race-name-charles', but 4 would be ':sex-height-race-name-charles',
+;;  depth is measured from right to left, so most recent parent first. If all-parents is set to t, 
+;; then all the parents with the exception of the positions listed in ignore-positions will be used"
+;;   (when (listp ignore-positions)
+;;     (let ((items-to-remove (collect-positions-in-list parents ignore-positions)))
+;;       (setf parents (remove-list-items-from-list items-to-remove parents))))
+;;   (when all-parents
+;;     (setf depth-of-combination (length parents)))
+;;   (when (< depth-of-combination 1)
+;;     (setf depth-of-combination 1))
+;;   (when (< (length parents) depth-of-combination)
+;;     (setf depth-of-combination (length parents)))
+;;   (if from-start
+;;       (intern (format nil "~{~a~^-~}" (subseq parents 0 depth-of-combination))
+;; 	      "KEYWORD")
+;;       (intern (format nil "~{~a~^-~}" (reverse (subseq (reverse parents) 0 depth-of-combination)))
+;; 	      "KEYWORD")))
 
 (defgeneric make-entry (name value)
   (:documentation "Takes in a name and a value and creates a variable by that name with that data"))
@@ -130,6 +155,8 @@ then all the parents with the exception of the positions listed in ignore-positi
 (defmethod access (key)
   (gethash key *val-hash*))
 
+(defmethod (setf access) (key value)
+  (setf (gethash key *val-hash*) value))
 (defgeneric set-access (key value)
   (:documentation "Sets the value of key to value"))
 (defmethod set-access (key value)
